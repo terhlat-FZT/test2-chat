@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Business Message Center</title>
+    <style>
+        :root {
+            --whatsapp-green: #25D366;
+            --whatsapp-light: #DCF8C6;
+            --whatsapp-dark: #075E54;
+            --incoming-bg: #FFFFFF;
+            --outgoing-bg: #DCF8C6;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #F0F2F5;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            border-right: 1px solid #E9EDEF;
+            overflow-y: auto;
+        }
+        
+        .header {
+            padding: 15px;
+            background-color: #F0F2F5;
+            border-bottom: 1px solid #E9EDEF;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .search {
+            padding: 10px;
+            border-bottom: 1px solid #E9EDEF;
+        }
+        
+        .search input {
+            width: 100%;
+            padding: 8px 15px;
+            border: 1px solid #E9EDEF;
+            border-radius: 20px;
+            outline: none;
+        }
+        
+        .contact-list {
+            overflow-y: auto;
+        }
+        
+        .contact {
+            display: flex;
+            padding: 12px;
+            border-bottom: 1px solid #E9EDEF;
+            cursor: pointer;
+        }
+        
+        .contact:hover {
+            background-color: #F5F5F5;
+        }
+        
+        .contact.active {
+            background-color: #EBEBEB;
+        }
+        
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #DFE5E7;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .contact-info {
+            flex: 1;
+        }
+        
+        .contact-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .contact-last-msg {
+            font-size: 13px;
+            color: #667781;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 15px;
+            background-color: #F0F2F5;
+            border-bottom: 1px solid #E9EDEF;
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-image: url('https://web.whatsapp.com/img/bg-chat-tile-light_a4be512e7195b6b733d9110b408f075d.png');
+            background-repeat: repeat;
+        }
+        
+        .message {
+            max-width: 60%;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .incoming {
+            background-color: var(--incoming-bg);
+            margin-right: auto;
+            border-top-left-radius: 0;
+        }
+        
+        .outgoing {
+            background-color: var(--outgoing-bg);
+            margin-left: auto;
+            border-top-right-radius: 0;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #667781;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .message-input {
+            padding: 10px;
+            background-color: #F0F2F5;
+            border-top: 1px solid #E9EDEF;
+            display: flex;
+            align-items: center;
+        }
+        
+        .message-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 20px;
+            outline: none;
+            margin-right: 10px;
+        }
+        
+        .send-button {
+            background-color: var(--whatsapp-green);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .status-indicator {
+            font-size: 12px;
+            color: #667781;
+            text-align: center;
+            padding: 5px;
+        }
+        
+        .connection-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .disconnected {
+            background-color: #F44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="header">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+                <h3>Business Messages</h3>
+            </div>
+            <div class="search">
+                <input type="text" placeholder="Search or start new chat">
+            </div>
+            <div class="contact-list" id="contactList">
+                <!-- Contacts will be loaded here -->
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header" id="chatHeader">
+                <div class="contact-avatar" id="currentContactAvatar">WA</div>
+                <div class="contact-info">
+                    <div class="contact-name" id="currentContactName">Select a conversation</div>
+                    <div class="contact-last-msg" id="currentContactStatus">Click on a contact to chat</div>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will appear here -->
+                <div class="status-indicator" id="chatStatus">
+                    Select a conversation to view messages
+                </div>
+            </div>
+            
+            <div class="message-input">
+                <input type="text" id="messageInput" placeholder="Type a message" disabled>
+                <button class="send-button" id="sendButton" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="connection-status" id="connectionStatus">Connecting...</div>
+    
+    <script>
+        // Configuration
+        const config = {
+            whatsappPhoneNumberId: window.WHATSAPP_PHONE_NUMBER_ID,
+            whatsappBusinessAccountId: window.WHATSAPP_BUSINESS_ACCOUNT_ID,
+            apiUrl: window.NEXT_PUBLIC_APP_URL || window.location.origin,
+            accessToken: window.WHATSAPP_ACCESS_TOKEN
+        };
+        
+        // State
+        let currentContact = null;
+        let socket = null;
+        let contacts = [];
+        
+        // DOM Elements
+        const contactList = document.getElementById('contactList');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatStatus = document.getElementById('chatStatus');
+        const currentContactName = document.getElementById('currentContactName');
+        const currentContactStatus = document.getElementById('currentContactStatus');
+        const currentContactAvatar = document.getElementById('currentContactAvatar');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Initialize WebSocket connection
+        function connectWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+           
+            const wsUrl = `${wsProtocol}${window.location.host}/ws`;
+             console.log(wsUrl);
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = () => {
+                console.log('WebSocket connected');
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.className = 'connection-status connected';
+                
+                // Authenticate with the server
+                socket.send(JSON.stringify({
+                    type: 'auth',
+                    token: config.accessToken
+                }));
+            };
+            
+            socket.onclose = () => {
+                console.log('WebSocket disconnected');
+                connectionStatus.textContent = 'Disconnected - Reconnecting...';
+                connectionStatus.className = 'connection-status disconnected';
+                
+                // Try to reconnect after 5 seconds
+                setTimeout(connectWebSocket, 5000);
+            };
+            
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+            
+            socket.onmessage = (event) => {
+    try {
+        const data = JSON.parse(event.data);
+        handleWebSocketMessage(data);
+    } catch (error) {
+        // Le message n'est pas du JSON
+        console.warn("Message non JSON reçu :", event.data);
+
+        // Tu peux aussi traiter certains messages textuels ici
+        if (event.data === "connected") {
+            console.log("Connexion WebSocket établie !");
+            // Optionnel : appeler une fonction
+            handleWebSocketMessage({ status: "connected" });
+        }
+    }
+};
+
+        }
+        
+        // Handle incoming WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'contacts':
+                    updateContacts(data.contacts);
+                    break;
+                case 'message':
+                    addMessage(data.message);
+                    break;
+                case 'status':
+                    updateMessageStatus(data.messageId, data.status);
+                    break;
+                case 'error':
+                    console.error('Server error:', data.message);
+                    break;
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+        
+        // Update contacts list
+        function updateContacts(newContacts) {
+            contacts = newContacts;
+            contactList.innerHTML = '';
+            
+            if (contacts.length === 0) {
+                contactList.innerHTML = '<div style="padding: 20px; text-align: center; color: #667781;">No conversations yet</div>';
+                return;
+            }
+            
+            contacts.forEach(contact => {
+                const contactElement = document.createElement('div');
+                contactElement.className = 'contact';
+                contactElement.innerHTML = `
+                    <div class="contact-avatar" style="background-color: ${stringToColor(contact.name)}">
+                        ${contact.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.name}</div>
+                        <div class="contact-last-msg">${contact.lastMessage || 'No messages yet'}</div>
+                    </div>
+                `;
+                
+                contactElement.addEventListener('click', () => loadConversation(contact));
+                contactList.appendChild(contactElement);
+            });
+        }
+        
+        // Load conversation with a contact
+        function loadConversation(contact) {
+            currentContact = contact;
+            currentContactName.textContent = contact.name;
+            currentContactStatus.textContent = 'Online'; // In a real app, you'd track status
+            currentContactAvatar.style.backgroundColor = stringToColor(contact.name);
+            currentContactAvatar.textContent = contact.name.charAt(0).toUpperCase();
+            
+            // Enable message input
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            
+            // Clear and load messages
+            chatMessages.innerHTML = '';
+            chatStatus.textContent = 'Loading messages...';
+            
+            // In a real app, you would fetch messages from your backend
+            fetch(`${config.apiUrl}/api/messages/${contact.id}`)
+                .then(response => response.json())
+                .then(messages => {
+                    chatStatus.textContent = messages.length === 0 ? 
+                        'No messages yet. Start the conversation!' : '';
+                    
+                    messages.forEach(message => {
+                        addMessage(message);
+                    });
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error loading messages:', error);
+                    chatStatus.textContent = 'Failed to load messages';
+                });
+        }
+        
+        // Add a message to the chat
+        function addMessage(message) {
+            // Only add if it's for the current contact
+            if (currentContact && message.contactId !== currentContact.id) {
+                return;
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${message.direction}`;
+            
+            let statusIcon = '';
+            if (message.direction === 'outgoing') {
+                if (message.status === 'delivered') {
+                    statusIcon = '✓✓';
+                } else if (message.status === 'read') {
+                    statusIcon = '✓✓✓';
+                } else {
+                    statusIcon = '✓';
+                }
+            }
+            
+            messageElement.innerHTML = `
+                ${message.text}
+                <div class="message-time">
+                    ${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    ${statusIcon}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageElement);
+            chatStatus.textContent = '';
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Update message status
+        function updateMessageStatus(messageId, status) {
+            const messages = document.querySelectorAll('.message.outgoing');
+            for (const message of messages) {
+                if (message.dataset.messageId === messageId) {
+                    const timeElement = message.querySelector('.message-time');
+                    if (timeElement) {
+                        const timeText = timeElement.textContent.split('✓')[0].trim();
+                        if (status === 'delivered') {
+                            timeElement.textContent = `${timeText} ✓✓`;
+                        } else if (status === 'read') {
+                            timeElement.textContent = `${timeText} ✓✓✓`;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // Send a message
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !currentContact) return;
+            
+            const message = {
+                contactId: currentContact.id,
+                text: text,
+                direction: 'outgoing',
+                timestamp: new Date().toISOString(),
+                status: 'sending'
+            };
+            
+            // Add to UI immediately
+            addMessage(message);
+            
+            // Send to server
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: 'send_message',
+                    contactId: currentContact.id,
+                    text: text
+                }));
+            } else {
+                console.error('WebSocket not connected');
+            }
+            
+            messageInput.value = '';
+        }
+        
+        // Helper function to generate a color from a string
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const h = hash % 360;
+            return `hsl(${h}, 60%, 65%)`;
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Initialize
+        connectWebSocket();
+        
+        // Simulate some contacts for demo purposes
+        setTimeout(() => {
+            if (contacts.length === 0) {
+                updateContacts([
+                    { id: '1234567890', name: 'John Doe', lastMessage: 'Hey, how are you?' },
+                    { id: '2345678901', name: 'Jane Smith', lastMessage: 'Thanks for your help!' },
+                    { id: '3456789012', name: 'Acme Corp', lastMessage: 'Your order is ready' }
+                ]);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

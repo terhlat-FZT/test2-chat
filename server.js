@@ -21,7 +21,7 @@ const config = {
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
     businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-    apiVersion: 'v18.0'
+    apiVersion: 'v22.0'
 };
 
 // In-memory storage (replace with database in production)

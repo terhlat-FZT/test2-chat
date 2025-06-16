@@ -4,11 +4,13 @@ const http = require('http');
 const WebSocket = require('ws');
 const axios = require('axios');
 const bodyParser = require('body-parser');
-
+// Crée une application Express.
 const app = express();
+// Crée un serveur HTTP basé sur l'application Express,
+//  nécessaire pour y attacher un serveur WebSocket (qui utilise le même port).
 const server = http.createServer(app);
 
-// WebSocket server
+// WebSocket server Crée un serveur WebSocket attaché à ton serveur HTTP Express.
 const wss = new WebSocket.Server({ server });
 
 // Serve static files from public directory
@@ -31,7 +33,7 @@ const contacts = new Map(); // contactId → contact info
 
 // Webhook verification endpoint
 app.get('/webhook', (req, res) => {
-    const mode = req.query['hub.mode'];
+ 
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
@@ -45,11 +47,14 @@ app.get('/webhook', (req, res) => {
 });
 
 // WhatsApp webhook endpoint
+
 app.post('/webhook', (req, res) => {
     try {
         const body = req.body;
-        
-        if (body.object === 'whatsapp_business_account') {
+           if (body.object === 'instagram') {
+    console.log('les données recu par l instagram',JSON.stringify(data,null,2));
+
+           }else if (body.object === 'whatsapp_business_account') {
             body.entry.forEach(entry => {
                 entry.changes.forEach(change => {
                     if (change.field === 'messages') {

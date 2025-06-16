@@ -264,7 +264,7 @@
     <script>
         // Configuration
         const config = {
-            whatsappPhoneNumberId: window.WHATSAPP_PHONE_NUMBER_ID,
+            whatsappPhoneNumberId:window.WHATSAPP_PHONE_NUMBER_ID,
             whatsappBusinessAccountId: window.WHATSAPP_BUSINESS_ACCOUNT_ID,
             apiUrl: window.NEXT_PUBLIC_APP_URL || window.location.origin,
             accessToken: window.WHATSAPP_ACCESS_TOKEN
@@ -319,19 +319,18 @@
                 console.error('WebSocket error:', error);
             };
             
-            socket.onmessage = (event) => {
+socket.onmessage = (event) => {
     try {
         const data = JSON.parse(event.data);
         handleWebSocketMessage(data);
     } catch (error) {
-        // Le message n'est pas du JSON
-        console.warn("Message non JSON reçu :", event.data);
-
-        // Tu peux aussi traiter certains messages textuels ici
+        // Message is not JSON, handle known text messages
         if (event.data === "connected") {
-            console.log("Connexion WebSocket établie !");
-            // Optionnel : appeler une fonction
-            handleWebSocketMessage({ status: "connected" });
+            console.log("WebSocket connection established!");
+            handleWebSocketMessage({ type: "status", status: "connected" });
+        } else {
+            // Log unexpected errors for debugging
+            console.warn("Non-JSON message received:", event.data, error);
         }
     }
 };

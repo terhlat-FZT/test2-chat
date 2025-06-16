@@ -23,7 +23,7 @@ const config = {
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
     businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-    apiVersion: 'v18.0'
+    apiVersion: 'v22.0'
 };
 
 // In-memory storage (replace with database in production)
@@ -49,28 +49,40 @@ app.get('/webhook', (req, res) => {
 // WhatsApp webhook endpoint
 
 app.post('/webhook', (req, res) => {
-    try {
-        const body = req.body;
-           if (body.object === 'instagram') {
-    console.log('les données recu par l instagram',JSON.stringify(data,null,2));
-    
+  try {
+    const body = req.body;
 
-           }else if (body.object === 'whatsapp_business_account') {
-            body.entry.forEach(entry => {
-                entry.changes.forEach(change => {
-                    if (change.field === 'messages') {
-                        handleIncomingMessage(change.value);
-                    }
-                });
-            });
+    if (body.object === 'instagram') {
+      console.log('Données reçues par Instagram:', JSON.stringify(body, null, 2));
+      body.entry.forEach(entry => {
+        // Instagram Graph API envoie généralement "changes" pour les événements
+        if (entry.changes) {
+          entry.changes.forEach(change => {
+            if (change.field === 'messages') {
+              handleIncomingMessage(change.value);
+            }
+          });
         }
-        
-        res.status(200).send('EVENT_RECEIVED');
-    } catch (error) {
-        console.error('Webhook error:', error);
-        res.status(500).send('Internal Server Error');
+      });
+
+    } else if (body.object === 'whatsapp_business_account') {
+      console.log('Données reçues par WhatsApp:', JSON.stringify(body, null, 2));
+      body.entry.forEach(entry => {
+        entry.changes.forEach(change => {
+          if (change.field === 'messages') {
+            handleIncomingMessage(change.value);
+          }
+        });
+      });
     }
+
+    res.status(200).send('EVENT_RECEIVED');
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
+
 
 // API endpoint to get messages
 app.get('/api/messages/:contactId', (req, res) => {

@@ -30,7 +30,7 @@ const config = {
 const clients = new Map(); // WebSocket clients
 const messages = new Map(); // contactId → message array
 const contacts = new Map(); // contactId → contact info
-let typeData="";
+
 // Webhook verification endpoint
 app.get('/webhook', (req, res) => {
    const mode = req.query['hub.mode'];
@@ -53,26 +53,25 @@ app.post('/webhook', (req, res) => {
     const body = req.body;
 
     if (body.object === 'instagram') {
-        typeData="instagram";
       console.log('Données reçues par Instagram:', JSON.stringify(body, null, 2));
       body.entry.forEach(entry => {
         // Instagram Graph API envoie généralement "changes" pour les événements
         if (entry.changes) {
           entry.changes.forEach(change => {
-            if (change.field === 'messages') {
-              handleIncomingMessage(change.value);
+            if (change.field === 'messages' && change.value) {
+              handleIncomingMessage(change.value,"instagram");
             }
           });
         }
       });
 
     } else if (body.object === 'whatsapp_business_account') {
-        typeData="whatsapp";
-      console.log('Données reçues par WhatsApp:', JSON.stringify(body, null, 2));
+        
+    //   console.log('Données reçues par WhatsApp:', JSON.stringify(body, null, 2));
       body.entry.forEach(entry => {
         entry.changes.forEach(change => {
           if (change.field === 'messages') {
-            handleIncomingMessage(change.value);
+            handleIncomingMessage(change.value,"whatsapp");
           }
         });
       });
@@ -96,10 +95,51 @@ app.get('/api/messages/:contactId', (req, res) => {
 });
 
 // Handle incoming WhatsApp messages
-function handleIncomingMessage(value) {
+function handleIncomingMessage(value,typeData) {
     try {
-        if ( typeData=="instagram") {
+        console.log("typedata",typeData)
+        if ( typeData==="instagram") {
              console.log('message afficher',JSON.stringify(value,null,2));
+             if (typeData === "instagram") {
+    const senderId = value.sender.id;
+    const recipientId = value.recipient.id;
+    const timestamp = new Date(parseInt(value.timestamp) * 1000);
+    const text = value.message?.text || '[Message Instagram non textuel]';
+
+    const msgData = {
+        id: value.message_id || `insta-${Date.now()}`,
+        contactId: senderId,
+        text,
+        direction: 'incoming',
+        timestamp,
+        status: 'received'
+    };
+
+    // Stocker les infos de contact
+    if (!contacts.has(senderId)) {
+        contacts.set(senderId, {
+            id: senderId,
+            name: `Instagram User ${senderId}`,
+            lastMessage: text,
+            lastMessageTime: timestamp
+        });
+    }
+
+    // Stocker le message
+    if (!messages.has(senderId)) {
+        messages.set(senderId, []);
+    }
+    messages.get(senderId).push(msgData);
+
+    // Broadcast
+    broadcast({
+        type: 'message',
+        message: msgData,
+        contact: contacts.get(senderId)
+    });
+    return;
+}
+
             
         } else {
             

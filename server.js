@@ -30,7 +30,7 @@ const config = {
 const clients = new Map(); // WebSocket clients
 const messages = new Map(); // contactId → message array
 const contacts = new Map(); // contactId → contact info
-
+let typeData="";
 // Webhook verification endpoint
 app.get('/webhook', (req, res) => {
    const mode = req.query['hub.mode'];
@@ -53,6 +53,7 @@ app.post('/webhook', (req, res) => {
     const body = req.body;
 
     if (body.object === 'instagram') {
+        typeData="instagram";
       console.log('Données reçues par Instagram:', JSON.stringify(body, null, 2));
       body.entry.forEach(entry => {
         // Instagram Graph API envoie généralement "changes" pour les événements
@@ -66,6 +67,7 @@ app.post('/webhook', (req, res) => {
       });
 
     } else if (body.object === 'whatsapp_business_account') {
+        typeData="whatsapp";
       console.log('Données reçues par WhatsApp:', JSON.stringify(body, null, 2));
       body.entry.forEach(entry => {
         entry.changes.forEach(change => {
@@ -96,6 +98,13 @@ app.get('/api/messages/:contactId', (req, res) => {
 // Handle incoming WhatsApp messages
 function handleIncomingMessage(value) {
     try {
+        if ( typeData=="instagram") {
+             console.log('message afficher',JSON.stringify(value,null,2));
+            
+        } else {
+            
+     
+      
         const message = value.messages[0];
         const contact = value.contacts[0];
         const contactId = contact.wa_id;
@@ -139,7 +148,7 @@ function handleIncomingMessage(value) {
 
         // Send read receipt
         markMessageAsRead(message.id);
-
+   }
     } catch (error) {
         console.error('Error handling incoming message:', error);
     }

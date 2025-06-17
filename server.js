@@ -45,6 +45,19 @@ app.get('/webhook', (req, res) => {
         res.sendStatus(403);
     }
 });
+app.get('/privacy-policy', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Politique de confidentialité</title>
+      </head>
+      <body>
+        <h1>Politique de confidentialité</h1>
+        <p>Nous respectons la vie privée des utilisateurs. Aucune donnée personnelle n’est collectée, stockée ou partagée sans consentement explicite.</p>
+      </body>
+    </html>
+  `);
+});
 
 // WhatsApp webhook endpoint
 

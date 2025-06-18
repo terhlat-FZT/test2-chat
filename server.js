@@ -317,10 +317,10 @@ async function handleClientMessage(data, clientId) {
 }
 
 // WhatsApp API functions
- const URLInsta=`https://graph.facebook.com/${configInstagrame.apiVersion}/${configInstagrame.ig_busness_id}/messages`;
+ const URLInsta=`https://graph.facebook.com/${configInstagrame.apiVersion}/${configInstagrame.page_id}/messages`;
     const urlWhatsapp=`https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
     const accessTokenConfigWhatsapp= `Bearer ${config.accessToken}`;
-    const accessTokenConfigInstagram= `Bearer ${configInstagrame.INSTAGRAM_ACCESS_TOKEN}`;
+    const accessTokenConfigInstagram= `Bearer ${configInstagrame.accessToken}`;
 async function sendWhatsAppMessage(contactId, text) {
    
 const url = typeMessage === "instagram" ? URLInsta : urlWhatsapp;

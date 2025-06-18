@@ -31,14 +31,15 @@ const configInstagrame={
     app_secret: process.env.APP_SECRET,
     page_id: process.env.PAGE_ID,
    ig_busness_id:process.env.IG_BUSNESS_ID,
-    apiVersion: 'v23.0'
+    apiVersion: 'v23.0',
+    INSTAGRAM_ACCESS_TOKEN:process.env.INSTAGRAM_ACCESS_TOKEN
 }
 
 // In-memory storage (replace with database in production)
 const clients = new Map(); // WebSocket clients
 const messages = new Map(); // contactId → message array
 const contacts = new Map(); // contactId → contact info
-
+let typeMessage="";
 // Webhook verification endpoint
 app.get('/webhook', (req, res) => {
    const mode = req.query['hub.mode'];
@@ -74,6 +75,7 @@ app.post('/webhook', (req, res) => {
     const body = req.body;
 
    if (body.object === 'instagram') {
+    typeMessage="instagram";
   console.log('Données reçues par Instagram:', JSON.stringify(body, null, 2));
   body.entry.forEach(entry => {
     // Instagram utilise "messaging" dans les événements de message
@@ -85,7 +87,7 @@ app.post('/webhook', (req, res) => {
   });
 }
  else if (body.object === 'whatsapp_business_account') {
-        
+         typeMessage="whatsapp";
     //   console.log('Données reçues par WhatsApp:', JSON.stringify(body, null, 2));
       body.entry.forEach(entry => {
         entry.changes.forEach(change => {
@@ -315,9 +317,14 @@ async function handleClientMessage(data, clientId) {
 }
 
 // WhatsApp API functions
+ const URLInsta=`https://graph.facebook.com/${configInstagrame.apiVersion}/${configInstagrame.ig_busness_id}/messages`;
+    const urlWhatsapp=`https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
+    const accessTokenConfigWhatsapp= `Bearer ${config.accessToken}`;
+    const accessTokenConfigInstagram= `Bearer ${configInstagrame.INSTAGRAM_ACCESS_TOKEN}`;
 async function sendWhatsAppMessage(contactId, text) {
+   
     const response = await axios.post(
-        `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`,
+        typeMessage==="instagram"?URLInsta:urlWhatsapp,
         {
             messaging_product: 'whatsapp',
             recipient_type: 'individual',
@@ -327,7 +334,7 @@ async function sendWhatsAppMessage(contactId, text) {
         },
         {
             headers: {
-                'Authorization': `Bearer ${config.accessToken}`,
+                'Authorization':typeMessage==="instagram"?accessTokenConfigInstagram:accessTokenConfigWhatsapp,
                 'Content-Type': 'application/json'
             }
         }
@@ -338,7 +345,7 @@ async function sendWhatsAppMessage(contactId, text) {
 async function markMessageAsRead(messageId) {
     try {
         await axios.post(
-            `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`,
+            typeMessage==="instagram"?URLInsta:urlWhatsapp,
             {
                 messaging_product: 'whatsapp',
                 status: 'read',
@@ -346,7 +353,7 @@ async function markMessageAsRead(messageId) {
             },
             {
                 headers: {
-                    'Authorization': `Bearer ${config.accessToken}`,
+                     'Authorization':typeMessage==="instagram"?accessTokenConfigInstagram:accessTokenConfigWhatsapp,
                     'Content-Type': 'application/json'
                 }
             }

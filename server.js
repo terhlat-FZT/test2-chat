@@ -323,23 +323,30 @@ async function handleClientMessage(data, clientId) {
     const accessTokenConfigInstagram= `Bearer ${configInstagrame.INSTAGRAM_ACCESS_TOKEN}`;
 async function sendWhatsAppMessage(contactId, text) {
    
-    const response = await axios.post(
-        typeMessage==="instagram"?URLInsta:urlWhatsapp,
-        {
-            messaging_product: 'whatsapp',
-            recipient_type: 'individual',
-            to: contactId,
-            type: 'text',
-            text: { body: text }
-        },
-        {
-            headers: {
-                'Authorization':typeMessage==="instagram"?accessTokenConfigInstagram:accessTokenConfigWhatsapp,
-                'Content-Type': 'application/json'
-            }
-        }
-    );
-    return response.data;
+const url = typeMessage === "instagram" ? URLInsta : urlWhatsapp;
+  const token = typeMessage === "instagram" ? accessTokenConfigInstagram : accessTokenConfigWhatsapp;
+  
+  const payload = {
+    messaging_product: typeMessage === "instagram" ? "instagram" : "whatsapp",
+    to: contactId,
+    type: "text",
+    text: { body: text }
+  };
+
+  // Pour WhatsApp, tu peux ajouter recipient_type (optionnel)
+  if (typeMessage === "whatsapp") {
+    payload.recipient_type = "individual";
+  }
+
+  const response = await axios.post(url, payload, {
+    headers: {
+      'Authorization': token,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return response.data;
+       
 }
 
 async function markMessageAsRead(messageId) {

@@ -323,7 +323,7 @@ async function handleClientMessage(data, clientId) {
     const accessTokenConfigInstagram= `Bearer ${configInstagrame.accessToken}`;
 async function sendWhatsAppMessage(contactId, text) {
    
-const url = typeMessage === "instagram" ? URLInsta : urlWhatsapp;
+const url = typeMessage === "instagram" ? `https://graph.facebook.com/${configInstagrame.apiVersion}/${configInstagrame.page_id}/messages`: `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
   const token = typeMessage === "instagram" ? accessTokenConfigInstagram : accessTokenConfigWhatsapp;
   
   const payload = {

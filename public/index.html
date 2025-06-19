@@ -466,13 +466,15 @@ socket.onmessage = (event) => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         function handleIncomingMessage(message) {
+            console.log('message ',)
     const contactExists = contacts.some(c => c.id === message.contactId);
 
     // Si le contact n'est pas encore dans la liste, on l'ajoute
     if (!contactExists) {
+      
         const newContact = {
             id: message.contactId,
-            name: message.senderName || 'New Contact',
+            name: message.name || 'New Contact',
             lastMessage: message.text
         };
         contacts.push(newContact);

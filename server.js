@@ -3,6 +3,8 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const axios = require('axios');
+const mysql=require('mysql2');
+
 const bodyParser = require('body-parser');
 // Crée une application Express.
 const app = express();
@@ -16,7 +18,19 @@ const wss = new WebSocket.Server({ server });
 // Serve static files from public directory
 app.use(express.static('public'));
 app.use(bodyParser.json());
-
+const db=mysql.createConnection({
+    host:'localhost',
+    user:'root',
+    password:'',
+    database:'data-chat'
+});
+db.connect((err)=>{
+    if (err) {
+        console.error('Erreur de connexion a amysql',err.message);
+        return;
+    }
+    console.log('connecte a la base de donneés')
+})
 // Configuration
 const config = {
     verifyToken: process.env.VERIFY_TOKEN || 'YOUR_VERIFY_TOKEN',
@@ -39,6 +53,7 @@ const configInstagrame={
 const clients = new Map(); // WebSocket clients
 const messages = new Map(); // contactId → message array
 const contacts = new Map(); // contactId → contact info
+// const contactInsta=new Map();
 let typeMessage="";
 // Webhook verification endpoint
 app.get('/webhook', (req, res) => {
@@ -108,11 +123,18 @@ app.post('/webhook', (req, res) => {
 
 // API endpoint to get messages
 app.get('/api/messages/:contactId', (req, res) => {
-    const contactId = req.params.contactId;
-    res.json({
-        messages: messages.get(contactId) || [],
-        contact: contacts.get(contactId) || { id: contactId, name: contactId }
-    });
+  const contactId = req.params.contactId;
+
+  const query = `SELECT * FROM messages WHERE contactId = ? ORDER BY timestamp ASC`;
+
+  db.query(query, [contactId], (err, results) => {
+    if (err) {
+      console.error('Erreur MySQL:', err.message);
+      return res.status(500).json({ error: 'Erreur serveur' });
+    }
+
+    res.json(results);
+  });
 });
 
 // Handle incoming WhatsApp messages
@@ -128,7 +150,7 @@ function handleIncomingMessage(value, typeData) {
             const timestamp = new Date(parseInt(value.timestamp) * 1000);
             const text = value.message?.text || '[Message Instagram non textuel]';
 
-            const msgData = {
+            const messageData = {
                 id: value.message.mid || `insta-${Date.now()}`,
                 contactId: senderId,
                 text,
@@ -136,22 +158,40 @@ function handleIncomingMessage(value, typeData) {
                 timestamp,
                 status: 'received'
             };
+             const contactData = {
+    id: contactId,
+    name: contact.profile.name,
+    lastMessage: text,
+    lastMessageTime: timestamp
+  };
+            db.query(`INSERT INTO contacts (id, name, lastMessage, lastMessageTime)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+              lastMessage = VALUES(lastMessage),
+              lastMessageTime = VALUES(lastMessageTime)`,
+    [contactData.id, contactData.name, contactData.lastMessage, contactData.lastMessageTime]);
+
+  db.query(`INSERT INTO messages (id, contactId, text, direction, timestamp, status)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+    [messageData.id, messageData.contactId, messageData.text, messageData.direction, messageData.timestamp, messageData.status]);
+
 
             // Stocker les infos de contact
-            if (!contacts.has(senderId)) {
-                contacts.set(senderId, {
-                    id: senderId,
-                    name: `Instagram User ${senderId}`,
-                    lastMessage: text,
-                    lastMessageTime: timestamp
-                });
-            }
+            // if (!contacts.has(senderId)) {
+            //     contacts.set(senderId, {
+            //         id: senderId,
+            //         name: `Instagram User ${senderId}`,
+            //         lastMessage: text,
+            //         messages: messages.get(contactId) || [],
+            //         lastMessageTime: timestamp
+            //     });
+            // }
 
             // Stocker le message
-            if (!messages.has(senderId)) {
-                messages.set(senderId, []);
-            }
-            messages.get(senderId).push(msgData);
+            // if (!messages.has(senderId)) {
+            //     messages.set(senderId, []);
+            // }
+            // messages.get(senderId).push(msgData);
 
             // Broadcast
             broadcast({

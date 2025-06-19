@@ -231,7 +231,7 @@
             </div>
         </div>
         
-        <div class="chat-container">
+        <div class="chat-container" >
             <div class="chat-header" id="chatHeader">
                 <div class="contact-avatar" id="currentContactAvatar">WA</div>
                 <div class="contact-info">
@@ -269,12 +269,20 @@
             apiUrl: window.NEXT_PUBLIC_APP_URL || window.location.origin,
             accessToken: window.WHATSAPP_ACCESS_TOKEN
         };
-        
+         const configInstagrame={
+  
+    app_secret: window.APP_SECRET,
+    page_id: window.PAGE_ID,
+   ig_busness_id:window.IG_BUSNESS_ID,
+   accessToken: window.PAGE_ACCESS_TOKEN,
+  
+}
         // State
         let currentContact = null;
         let socket = null;
         let contacts = [];
         
+
         // DOM Elements
         const contactList = document.getElementById('contactList');
         const chatMessages = document.getElementById('chatMessages');
@@ -302,7 +310,7 @@
                 // Authenticate with the server
                 socket.send(JSON.stringify({
                     type: 'auth',
-                    token: config.accessToken
+                    token: config.accessToken||configInstagrame.accessToken,
                 }));
             };
             
@@ -344,7 +352,8 @@ socket.onmessage = (event) => {
                     updateContacts(data.contacts);
                     break;
                 case 'message':
-                    addMessage(data.message);
+                    handleIncomingMessage(data.message);
+                    // addMessage(data.message);
                     break;
                 case 'status':
                     updateMessageStatus(data.messageId, data.status);
@@ -424,9 +433,9 @@ socket.onmessage = (event) => {
         // Add a message to the chat
         function addMessage(message) {
             // Only add if it's for the current contact
-            if (currentContact && message.contactId !== currentContact.id) {
-                return;
-            }
+            // if (currentContact && message.contactId !== currentContact.id) {
+            //     return;
+            // }
             
             const messageElement = document.createElement('div');
             messageElement.className = `message ${message.direction}`;
@@ -456,6 +465,31 @@ socket.onmessage = (event) => {
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+        function handleIncomingMessage(message) {
+    const contactExists = contacts.some(c => c.id === message.contactId);
+
+    // Si le contact n'est pas encore dans la liste, on l'ajoute
+    if (!contactExists) {
+        const newContact = {
+            id: message.contactId,
+            name: message.senderName || 'New Contact',
+            lastMessage: message.text
+        };
+        contacts.push(newContact);
+        updateContacts(contacts);
+    } else {
+        // Mettre à jour le dernier message
+        const contact = contacts.find(c => c.id === message.contactId);
+        contact.lastMessage = message.text;
+        updateContacts(contacts);
+    }
+
+    // Afficher le message seulement si on est dans cette conversation
+    if (currentContact && currentContact.id === message.contactId) {
+        addMessage(message);
+    }
+}
+
         
         // Update message status
         function updateMessageStatus(messageId, status) {

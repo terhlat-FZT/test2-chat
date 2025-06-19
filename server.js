@@ -317,7 +317,7 @@ async function handleClientMessage(data, clientId) {
 }
 
 // WhatsApp API functions
- const URLInsta=`https://graph.facebook.com/${configInstagrame.apiVersion}/${configInstagrame.page_id}/messages`;
+    const URLInsta=`https://graph.facebook.com/${configInstagrame.apiVersion}/${configInstagrame.page_id}/messages`;
     const urlWhatsapp=`https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
     const accessTokenConfigWhatsapp= `Bearer ${config.accessToken}`;
     const accessTokenConfigInstagram= `Bearer ${configInstagrame.accessToken}`;
@@ -327,7 +327,7 @@ const url = typeMessage === "instagram" ? `https://graph.facebook.com/${configIn
   const token = typeMessage === "instagram" ? accessTokenConfigInstagram : accessTokenConfigWhatsapp;
   
   const payload = {
-    messaging_product: typeMessage === "instagram" ? "instagram" : "whatsapp",
+ 
     to: contactId,
     type: "text",
     text: { body: text }
